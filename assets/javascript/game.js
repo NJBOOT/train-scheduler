@@ -18,12 +18,21 @@ $(document).ready(function () {
         var time = $("#train-time").val().trim()
         var freq = $("#frequency").val().trim()
 
-        database.ref().push({
-            name: name,
-            destination: dest,
-            time: time,
-            frequency: freq
-        });
+        if (name != "" && dest != "" && time != "" && freq != "") {
+            database.ref().push({
+                name: name,
+                destination: dest,
+                time: time,
+                frequency: freq
+            });
+        } else {
+            alert("Enter Valid Train Data");
+            $("#train-name").val("");
+            $("#train-destination").val("");
+            $("#train-time").val("");
+            $("#frequency").val("");
+            return false;
+        }
     })
 
     database.ref().on("child_added", function (snapshot) {
@@ -31,55 +40,55 @@ $(document).ready(function () {
         var sv = snapshot.val();
 
         // Console logging the last user's data
-        console.log(sv);
         console.log(sv.name);
         console.log(sv.destination);
         console.log(sv.time);
         console.log(sv.frequency);
 
-        currentTime = moment();
-        console.log(currentTime)
+        // calculate moment values before appending to tbody
 
-        var firstArrivalConverted = moment(sv.time , "HH:mm A").subtract(1, "years");
-        console.log(firstArrivalConverted)
+        // format current time in military
+        currentTime = moment().format("HH:mm");
+        console.log("Current Time: " + currentTime)
 
-        var diff = moment().diff(moment(firstArrivalConverted) , "minutes");
+        // The calculation part took a lot of googling. Credit to previous train sched. githubs in particular "https://github.com/ThompsonJonM/train-scheduler/blob/master/assets/javascript/logic.js"
+
+        // Subtract a year from current moment to future proof app calculations (make sure it comes before current time). 
+        var firstArrivalConverted = moment(sv.time, "HH:mm").subtract(1, "years");
+        console.log("First Arrival: " + firstArrivalConverted)
+
+        //Calculate the difference between now and first train time
+        var diff = moment().diff(moment(firstArrivalConverted), "minutes");
+
+        //Divide the train time difference (now vs first arrival) by the frequency it runs using the modulus operator to retreive leftover time. 
         var leftover = diff % sv.frequency;
-        
-        var timeLeft = sv.frequency - leftover;
-        console.log("Time Left until Train: "+timeLeft)
 
-        var trainArrival = moment().add(timeLeft , "m").format("HH:mm: A");
-        console.log("Next Train Arrival: "+trainArrival)
+        //Subtract the leftover mod. value from the frequency to obtain the "timeLeft" value. 
+        var timeLeft = sv.frequency - leftover;
+        console.log("Time Left until Train: " + timeLeft)
+
+        // Add minutes left until first arrival to current time to calculate next train arrival. 
+        var trainArrival = moment().add(timeLeft, "m").format("HH:mm");
+        console.log("Next Train Arrival: " + trainArrival);
 
         // make a table row saved to var
         var newRow = $("<tr>")
 
-        var trainName = $("<td>").text(sv.name)
-        var trainDest = $("<td>").text(sv.destination)
-        var trainFreq = $("<td>").text(sv.frequency)
- 
-
-
-        newRow.append(trainName)
-        newRow.append(trainDest)
-        newRow.append(trainFreq)
- 
-
-        $("#tableContent").append(newRow)
-
         // make each td and append to row
-        // calculate moment values before appending to tbody
+        var trainName = $("<td>").text(sv.name);
+        var trainDest = $("<td>").text(sv.destination);
+        var trainFreq = $("<td>").text(sv.frequency);
+        var trainArr = $("<td>").text(trainArrival);
+        var minAway = $("<td>").text(timeLeft);
 
-
-        // // Change the HTML to reflect
-        // $("#name-display").text(sv.name);
-        // $("#email-display").text(sv.email);
-        // $("#age-display").text(sv.age);
-        // $("#comment-display").html(<tr>);
+        newRow.append(trainName);
+        newRow.append(trainDest);
+        newRow.append(trainFreq);
+        newRow.append(trainArr);
+        newRow.append(minAway);
 
         // append to tbody
-
+        $("#tableContent").append(newRow)
 
     }, function (errorObject) {
         console.log("Errors handled: " + errorObject.code);
