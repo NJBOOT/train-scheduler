@@ -18,7 +18,9 @@ $(document).ready(function () {
         var time = $("#train-time").val().trim()
         var freq = $("#frequency").val().trim()
 
-        if (name != "" && dest != "" && time != "" && freq != "") {
+        var isValidTime = /\d\d:\d\d/.test(time)
+
+        if (name != "" && dest != "" && isValidTime && freq != "") {
             database.ref().push({
                 name: name,
                 destination: dest,
